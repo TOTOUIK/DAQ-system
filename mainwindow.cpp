@@ -6,15 +6,29 @@
 #include <QGraphicsScene>
 #include <opencv2/opencv.hpp>
 #include "cameracontroller.h"
+#include "gc3d.h"
+#include "gc3dAlgorithm.h"
+#include "graphicsviewzoomer.h"
 
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent)
-    , ui(new Ui::MainWindow)
-    , forceModule(new ForceModule(this))
-    , vibrationModule(new VibrationModule(this))
+    : QMainWindow(parent),
+    ui(new Ui::MainWindow),
+    forceModule(new ForceModule(this)),
+    vibrationModule(new VibrationModule(this)),
+    cameraController(new CameraController(this))
 {
     ui->setupUi(this);
-
+    if (!cameraController->initCamera()) {
+        QMessageBox::critical(this, "错误", "相机初始化失败！");
+    } else {
+        qDebug() << "相机初始化成功。";
+    }
+    // 图像显示设置
+    cameraScene = new QGraphicsScene(this);
+    ui->graphicsCamera->setScene(cameraScene);
+    cameraZoomer = new GraphicsViewZoomer(ui->graphicsCamera, this);
+    connect(ui->btnPreview, &QPushButton::clicked, this, &MainWindow::on_btnPreview_clicked);
+    connect(ui->btnDepth, &QPushButton::clicked, this, &MainWindow::on_btnDepth_clicked);
     // 信号连接
     connect(forceModule, &ForceModule::newForceData, this, [](double t, double fx, double fy, double fz){
         Q_UNUSED(t); Q_UNUSED(fx); Q_UNUSED(fy); Q_UNUSED(fz);
@@ -24,16 +38,9 @@ MainWindow::MainWindow(QWidget *parent)
         Q_UNUSED(t); Q_UNUSED(value);
     });
 
-    // 相机错误提示
-    connect(&camera, &CameraController::cameraError, this, [this](const QString& msg){
-        QMessageBox::critical(this, "相机错误", msg);
-    });
-
-    // 初始化相机
-    if (!camera.initCamera()) {
-        QMessageBox::warning(this, "提示", "相机初始化失败！");
-    }
 }
+
+
 
 MainWindow::~MainWindow()
 {
@@ -58,11 +65,17 @@ void MainWindow::on_stopButton_clicked()
     qDebug() << "采集停止。";
 }
 
+
+QString MainWindow::getTimestamp()
+{
+    return QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss");
+}
 /*==============================
  * 图像显示辅助函数
  *==============================*/
 static void showImageOnGraphicsView(QGraphicsView* view, const QImage& img)
 {
+    qDebug() << "进入图像展示";
     auto* scene = new QGraphicsScene(view);
     scene->addPixmap(QPixmap::fromImage(img));
     view->setScene(scene);
@@ -74,10 +87,29 @@ static void showImageOnGraphicsView(QGraphicsView* view, const QImage& img)
  *==============================*/
 void MainWindow::on_btnPreview_clicked()
 {
+    // ====== 提取 UI 参数 ======
+    int exposure   = ui->spinExposure->value();
+    int smooth     = ui->spinSmooth->value();
+    int thMin      = ui->spinThresholdMin->value();
+    int thMax      = ui->spinThresholdMax->value();
+    int heightMin  = ui->spinHeightMin->value();
+    int heightMax  = ui->spinHeightMax->value();
+    float dn1      = ui->spinDenoise1->value();
+    float dn2      = ui->spinDenoise2->value();
+
+    // ====== 设置参数 ======
+    cameraController->applyParameters(
+        exposure,
+        smooth,
+        thMin, thMax,
+        heightMin, heightMax,
+        dn1, dn2
+        );
+
+    // ====== 采集图像 ======
     QImage img;
-    if (camera.capturePreview(img, ui->spinExposure->value())) {
+    if (cameraController->capturePreview(img)) {
         showImageOnGraphicsView(ui->graphicsCamera, img);
-        qDebug() << "预览图显示成功";
     } else {
         QMessageBox::warning(this, "提示", "图像预览失败！");
     }
@@ -86,26 +118,41 @@ void MainWindow::on_btnPreview_clicked()
 /*==============================
  * 深度图测量
  *==============================*/
-void MainWindow::on_btnMeasure3D_clicked()
+void MainWindow::on_btnDepth_clicked()
 {
-    QImage depthImg;
-    gc3d::GC3DMetaData meta;
+    // ====== 提取 UI 参数 ======
+    int exposure   = ui->spinExposure->value();
+    int smooth     = ui->spinSmooth->value();
+    int thMin      = ui->spinThresholdMin->value();
+    int thMax      = ui->spinThresholdMax->value();
+    int heightMin  = ui->spinHeightMin->value();
+    int heightMax  = ui->spinHeightMax->value();
+    float dn1      = ui->spinDenoise1->value();
+    float dn2      = ui->spinDenoise2->value();
 
-    bool ok = camera.captureDepth(
-        depthImg, meta,
-        ui->spinExposure->value(),
-        ui->spinThresholdMin->value(),
-        ui->spinThresholdMax->value(),
-        ui->spinSmoothMin->value(),
-        ui->spinSmoothMax->value(),
-        ui->spinDenoise1->value(),  // 降噪参数1
-        ui->spinDenoise2->value()   // 降噪参数2
+    // ====== 设置参数 ======
+    cameraController->applyParameters(
+        exposure,
+        smooth,
+        thMin, thMax,
+        heightMin, heightMax,
+        dn1, dn2
         );
 
-    if (ok) {
+    // ====== 扫描深度 ======
+    QImage depthImg;
+    gc3d::GC3DMetaData meta;
+    if (cameraController->captureDepth(depthImg, meta)) {
         showImageOnGraphicsView(ui->graphicsCamera, depthImg);
-        qDebug() << "深度图显示成功";
     } else {
-        QMessageBox::warning(this, "提示", "深度图采集失败！");
+        QMessageBox::warning(this, "错误", "深度扫描失败！");
     }
 }
+
+
+// void MainWindow::on_btnSaveCloud_clicked()
+// {
+//     cameraController->savePointCloudXYZ("cloud.xyz", meta);
+
+// }
+

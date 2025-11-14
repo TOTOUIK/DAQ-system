@@ -40,38 +40,44 @@ void CameraController::closeCamera()
     }
 }
 
-void CameraController::applyParameters(int exposureMs,
-                                       int thMin, int thMax,
-                                       int smoothMin, int smoothMax,
-                                       float denoise1, float denoise2)
+void CameraController::applyParameters(
+    int exposureMs,
+    int smooth,
+    int thMin, int thMax,
+    int heightMin, int heightMax,
+    float denoise1, float denoise2)
 {
+    QMutexLocker locker(&m_mutex);
     if (!m_device) return;
 
-    // === 曝光 ===
-    GC3DCameraParameters param = m_device->getCameraParameters();
-    param.exposureNum = 1;
-    param.exposureTime = exposureMs * 1000; // ms → us
-    m_device->setCameraParameters(param);
+    // ---- 设置曝光 ----
+    m_exposureUs = exposureMs * 1000;
+    GC3DCameraParameters params = m_device->getCameraParameters();
+    params.enableGamma = false;
+    params.exposureNum = 1;
+    params.gain = 0;
+    params.exposureTime = m_exposureUs  ;
+    m_device->setCameraParameters(params);
+    // === 平滑参数 ===
+    m_device->setSmoothParam(smooth);
 
     // === 重建阈值 ===
     m_device->setReconThreshold(thMin, thMax);
 
-    // === 平滑参数 ===
-    int smoothParam = (smoothMin + smoothMax) / 2;
-    m_device->setSmoothParam(smoothParam);
-
     // === 高度范围 ===
-    m_device->setHeightRange(420.0f + smoothMin, 420.0f + smoothMax);
-
+    // m_device->setHeightRange(420.0f + heightMin, 420.0f + heightMax);
+    m_device->setHeightRange(heightMin,heightMax);
+    m_device->setNeedGridData(false);
     // === 降噪参数 ===
-    int fmr = 4;                 // 默认去噪半径
+    int fmr = 3;                 // 默认去噪半径
     float denoiseIndex1 = denoise1; // 基于邻域有效点数量（0.1-5）
     float denoiseIndex2 = denoise2; // 基于邻域点距（0-50）
-    float denoiseIndex3 = 0.5f;     // 默认局部降噪参数
+    float denoiseIndex3 = 20;     // 默认局部降噪参数
     m_device->setDenoiseParameters(fmr, denoiseIndex1, denoiseIndex2, denoiseIndex3);
 }
 
-bool CameraController::capturePreview(QImage& outImg, int exposureMs)
+
+bool CameraController::capturePreview(QImage& outImg)
 {
     QMutexLocker locker(&m_mutex);
     if (!m_device) return false;
@@ -81,47 +87,38 @@ bool CameraController::capturePreview(QImage& outImg, int exposureMs)
     int W = info.sensorWidth;
     int H = info.sensorHeight;
     std::vector<unsigned char> buf(W * H);
-
+    qDebug() << "曝光时长"<<m_exposureUs<<"ms";
     // 拍摄灰度预览图
-    m_device->snapShot2D(exposureMs * 1000, 0.0, buf.data());
+    m_device->snapShot2D(m_exposureUs, 0.0, buf.data());
     outImg = QImage(buf.data(), W, H, QImage::Format_Grayscale8).copy();
 
     qDebug() << "预览图采集成功";
     return true;
 }
 
-bool CameraController::captureDepth(QImage& outDepthImg,
-                                    GC3DMetaData& outMeta,
-                                    int exposureMs,
-                                    int thMin, int thMax,
-                                    int smoothMin, int smoothMax,
-                                    float denoise1, float denoise2)
-{
+
+bool CameraController::captureDepth(QImage& outDepthImg, GC3DMetaData& outMeta)
+{   qDebug()<<"准备采集深度图";
     QMutexLocker locker(&m_mutex);
     if (!m_device) return false;
 
-    // 设置参数
-    applyParameters(exposureMs, thMin, thMax, smoothMin, smoothMax, denoise1, denoise2);
-
-    if (m_device->snapShot3D() != GC3D_SUCCESS) {
-        emit cameraError("3D扫描失败！");
+    if (m_device->snapShot3D() != GC3D_SUCCESS)
         return false;
-    }
-
-    if (m_device->getGC3DMetaData(outMeta) != GC3D_SUCCESS) {
-        emit cameraError("获取3D数据失败！");
+    qDebug()<<"采集深度图";
+    if (m_device->getGC3DMetaData(outMeta) != GC3D_SUCCESS)
         return false;
-    }
 
     int W = outMeta.imgW;
     int H = outMeta.imgH;
 
+    // depthImageData → 伪彩显示
     cv::Mat gray(H, W, CV_8UC1, outMeta.depthImageData);
     cv::Mat color;
     cv::applyColorMap(gray, color, cv::COLORMAP_JET);
 
     outDepthImg = QImage(color.data, W, H, color.step, QImage::Format_BGR888).copy();
-
     qDebug() << "深度图采集成功";
     return true;
 }
+
+

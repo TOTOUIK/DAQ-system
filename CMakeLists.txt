@@ -41,6 +41,7 @@ add_executable(DAQsystem
     mainwindow.ui
     mainwindow.cpp
     main.cpp
+    depthview.h depthview.cpp
 )
 
 target_sources(DAQsystem PRIVATE
@@ -59,7 +60,7 @@ target_link_libraries(DAQsystem PRIVATE
     Qt6::Gui
     "${THIRD}/GCI_SDK/lib/GC3D.lib"
     "${THIRD}/GCI_SDK/lib/GC3DAlgorithm.lib"
-    "${THIRD}/GCI_SDK/lib/GC3Dencrypted.lib"
+    "${THIRD}/GCI_SDK/lib/GC3D-加密.lib"
     "${THIRD}/zlib/lib/zlibwapi.lib"
     ws2_32
     $<$<CONFIG:Debug>:"${THIRD}/opencv/build/x64/vc16/lib/${OPENCV_WORLD_DBG}">
