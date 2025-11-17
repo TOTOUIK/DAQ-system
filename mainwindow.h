@@ -28,7 +28,8 @@ private slots:
     void on_stopButton_clicked();
     void on_btnPreview_clicked();     // ✅ 预览图
     void on_btnDepth_clicked();   // ✅ 深度图
-
+    void on_btnSaveCloud_clicked();
+    void showImageOnGraphicsView(QGraphicsView *view, const QImage &img);
 private:
     Ui::MainWindow *ui;
     ForceModule *forceModule;
@@ -36,8 +37,8 @@ private:
     CameraController *cameraController = nullptr;
     GraphicsViewZoomer *cameraZoomer = nullptr;
     QGraphicsScene *cameraScene = nullptr;
-    void showMatOnGraphicsView(QGraphicsView *view, const cv::Mat &img); // ✅ 正确声明
     QString getTimestamp();
+    DepthView* depthView;
 };
 
 #endif // MAINWINDOW_H

@@ -1,6 +1,6 @@
 ﻿#include "cameracontroller.h"
 #include <QDebug>
-
+#include <fstream>
 using namespace gc3d;
 
 CameraController::CameraController(QObject* parent)
@@ -121,4 +121,58 @@ bool CameraController::captureDepth(QImage& outDepthImg, GC3DMetaData& outMeta)
     return true;
 }
 
+// 保存最近一次 meta
+void CameraController::setLastMeta(const gc3d::GC3DMetaData& meta)
+{
+    QMutexLocker locker(&m_mutex);
+    m_lastMeta = meta;        // 结构体复制 OK（SDK 内部用指针也没问题）
+    m_lastMetaValid = true;
+}
 
+bool CameraController::saveLastPointCloudNpy(const std::string &filepath) {
+    if (!m_lastMetaValid) return false;
+    const gc3d::GC3DMetaData &meta = m_lastMeta; // 假定你在类里保存了 lastMeta 成员
+
+    if (!meta.x || !meta.y || !meta.z || !meta.maskflag) return false;
+
+    int W = meta.imgW;
+    int H = meta.imgH;
+    std::vector<float> data; // will store x,y,z sequentially
+    data.reserve(W * H * 3);
+
+    for (int i = 0; i < W * H; ++i) {
+        if (!meta.maskflag[i]) continue;
+        data.push_back(meta.x[i]);
+        data.push_back(meta.y[i]);
+        data.push_back(meta.z[i]);
+    }
+    size_t rows = data.size() / 3;
+    if (rows == 0) return false;
+
+    // build numpy .npy header (version 1.0)
+    std::ofstream ofs(filepath, std::ios::binary);
+    if (!ofs) return false;
+
+    // magic string
+    ofs.write("\x93NUMPY", 6);
+    // version 1.0
+    unsigned char ver[2] = {1, 0};
+    ofs.write(reinterpret_cast<char*>(ver), 2);
+
+    // dtype '<f4' (little-endian float32), fortran_order False, shape (rows,3)
+    std::ostringstream header;
+    header << "{'descr': '<f4', 'fortran_order': False, 'shape': (" << rows << ", 3), }";
+    std::string h = header.str();
+    // pad to 16-byte alignment after 10 byte prefix (magic+ver+len)
+    int pad = 16 - ((10 + (int)h.size()) % 16);
+    if (pad == 16) pad = 0;
+    h.append(pad, ' ');
+    uint16_t hlen = static_cast<uint16_t>(h.size());
+    ofs.write(reinterpret_cast<char*>(&hlen), 2); // little endian
+    ofs.write(h.c_str(), h.size());
+
+    // write binary data as float32
+    ofs.write(reinterpret_cast<const char*>(data.data()), data.size() * sizeof(float));
+    ofs.close();
+    return true;
+}

@@ -6,6 +6,8 @@
 #include <opencv2/opencv.hpp>
 #include <gc3d.h>
 #include <gc3ddef.h>
+#include "gc3d.h"
+#include "gc3dAlgorithm.h"
 
 class CameraController : public QObject
 {
@@ -25,6 +27,10 @@ public:
                          int thMin, int thMax,
                          int heightMin, int heightMax,
                          float denoise1, float denoise2);
+    void setLastMeta(const gc3d::GC3DMetaData& meta);
+    const gc3d::GC3DMetaData* getLastMeta() const;
+
+    bool saveLastPointCloudNpy(const std::string &filepath);
 signals:
     void cameraError(const QString& msg);
 
@@ -37,4 +43,6 @@ private:
     int m_thMin = 0, m_thMax = 255;
     int m_heightMin = -50, m_heightMax = 50;
     float m_dn1 = 0.0f, m_dn2 = 7.0f;
+    bool m_lastMetaValid = false;       // 是否保存了最近一次深度数据
+    gc3d::GC3DMetaData m_lastMeta;           // 最近一次深度数据
 };
