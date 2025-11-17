@@ -129,6 +129,11 @@ void CameraController::setLastMeta(const gc3d::GC3DMetaData& meta)
     m_lastMetaValid = true;
 }
 
+const gc3d::GC3DMetaData* CameraController::getLastMeta() const
+{
+    return m_lastMetaValid ? &m_lastMeta : nullptr;
+}
+
 bool CameraController::saveLastPointCloudNpy(const std::string &filepath) {
     if (!m_lastMetaValid) return false;
     const gc3d::GC3DMetaData &meta = m_lastMeta; // 假定你在类里保存了 lastMeta 成员

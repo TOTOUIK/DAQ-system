@@ -51,7 +51,7 @@
      <item row="2" column="2">
       <widget class="QLabel" name="labelXYZ">
        <property name="text">
-        <string>TextLabel</string>
+        <string/>
        </property>
       </widget>
      </item>
@@ -63,7 +63,7 @@
       <x>40</x>
       <y>10</y>
       <width>581</width>
-      <height>91</height>
+      <height>141</height>
      </rect>
     </property>
     <widget class="QPushButton" name="stopButton">
@@ -188,7 +188,7 @@
       <rect>
        <x>20</x>
        <y>80</y>
-       <width>287</width>
+       <width>292</width>
        <height>41</height>
       </rect>
      </property>
@@ -229,7 +229,7 @@
       <item>
        <widget class="QLabel" name="label_4">
         <property name="text">
-         <string>-50-50mm</string>
+         <string>-50~50mm</string>
         </property>
        </widget>
       </item>
@@ -272,7 +272,7 @@
       <item>
        <widget class="QLabel" name="label_6">
         <property name="text">
-         <string>0-255</string>
+         <string>0~255</string>
         </property>
        </widget>
       </item>
@@ -308,7 +308,7 @@
       <item>
        <widget class="QLabel" name="label_11">
         <property name="text">
-         <string>0-20</string>
+         <string>0~20</string>
         </property>
        </widget>
       </item>
@@ -347,7 +347,7 @@
       <item>
        <widget class="QLabel" name="label_13">
         <property name="text">
-         <string>0.1-5</string>
+         <string>0.1~5</string>
         </property>
        </widget>
       </item>
@@ -383,7 +383,7 @@
       <item>
        <widget class="QLabel" name="label_8">
         <property name="text">
-         <string>10-50</string>
+         <string>10~50</string>
         </property>
        </widget>
       </item>

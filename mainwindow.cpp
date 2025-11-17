@@ -41,9 +41,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(vibrationModule, &VibrationModule::newVibrationData, this, [](double t, double value){
         Q_UNUSED(t); Q_UNUSED(value);
     });
-
 }
-
 
 MainWindow::~MainWindow()
 {
@@ -168,19 +166,18 @@ void MainWindow::on_btnDepth_clicked()
         heightMin, heightMax,
         dn1, dn2
         );
-
-    // ====== 扫描深度 ======
     QImage depthImg;
     gc3d::GC3DMetaData meta;
     if (cameraController->captureDepth(depthImg, meta)) {
-        depthView->setMetaData(&meta);   //meta 指针交给 depthView 显示鼠标信息
-        showImageOnGraphicsView(ui->graphicsCamera, depthImg);
+        // 重要：先把 meta 存到 CameraController（由 CameraController 管理生命周期）
         cameraController->setLastMeta(meta);
+        // 再把 CameraController 管理的 meta 指针传给 depthView（避免传递局部地址）
+        depthView->setMetaData(cameraController->getLastMeta());
+        showImageOnGraphicsView(ui->graphicsCamera, depthImg);
     } else {
         QMessageBox::warning(this, "错误", "深度扫描失败！");
     }
 }
-
 
 void MainWindow::on_btnSaveCloud_clicked()
 {

@@ -6,7 +6,7 @@
 
 DepthView::DepthView(QObject *parent)
     : QObject(parent)
-{}
+{ }
 
 void DepthView::attachToView(QGraphicsView *view)
 {
@@ -14,7 +14,11 @@ void DepthView::attachToView(QGraphicsView *view)
     if (m_view) m_view->removeEventFilter(this);
     m_view = view;
     if (m_view) {
+        // 安装 event filter 到 viewport，保证收到鼠标移动事件
         m_view->viewport()->installEventFilter(this);
+        // 开启鼠标跟踪（即使没有按键按下也能收到 MouseMove）
+        m_view->viewport()->setMouseTracking(true);
+        m_view->setMouseTracking(true);
     }
 }
 
@@ -51,23 +55,17 @@ bool DepthView::eventFilter(QObject *watched, QEvent *event)
         int imgX = int(std::round(sx));
         int imgY = int(std::round(sy));
 
-        // clamp
-        if (imgX < 0) imgX = -1;
-        if (imgY < 0) imgY = -1;
-
-        // 若 meta 有效则根据 meta 大小再作一次映射（scene rect -> image resolution）
+        // 若 meta 有效则按 meta 分辨率比例映射
         if (m_meta && m_meta->imgW > 0 && m_meta->imgH > 0) {
-            // scene rect may represent the image size; we map proportionally
             double fx = bounds.width() / double(m_meta->imgW);
             double fy = bounds.height() / double(m_meta->imgH);
             if (fx != 0 && fy != 0) {
-                int mappedX = int((scenePt.x() - bounds.left()) / fx + 0.5);
-                int mappedY = int((scenePt.y() - bounds.top()) / fy + 0.5);
-                imgX = mappedX;
-                imgY = mappedY;
+                imgX = int((scenePt.x() - bounds.left()) / fx + 0.5);
+                imgY = int((scenePt.y() - bounds.top()) / fy + 0.5);
             }
         }
 
+        // clamp
         if (imgX >= 0 && imgY >= 0) {
             updateLabelForPos(imgX, imgY);
             emit mousePositionChanged(imgX, imgY);
@@ -99,7 +97,6 @@ void DepthView::updateLabelForPos(int ix, int iy)
         m_labelXYZ->setText(QString("X,Y,Z: invalid"));
         return;
     }
-    // x,y,z are float arrays
     float x = 0.0f, y = 0.0f, z = 0.0f;
     if (m_meta->x) x = m_meta->x[idx];
     if (m_meta->y) y = m_meta->y[idx];
