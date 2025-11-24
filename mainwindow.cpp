@@ -6,6 +6,7 @@
 #include <QGraphicsScene>
 #include <opencv2/opencv.hpp>
 #include "cameracontroller.h"
+#include "nidaqcontroller.h"
 #include "gc3d.h"
 #include "gc3dAlgorithm.h"
 #include "graphicsviewzoomer.h"
@@ -13,8 +14,6 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent),
     ui(new Ui::MainWindow),
-    forceModule(new ForceModule(this)),
-    vibrationModule(new VibrationModule(this)),
     cameraController(new CameraController(this))
 {
     ui->setupUi(this);
@@ -22,6 +21,7 @@ MainWindow::MainWindow(QWidget *parent)
     depthView = new DepthView(this);
     depthView->attachToView(ui->graphicsCamera);
     depthView->setLabelXYZ(ui->labelXYZ);
+
     if (!cameraController->initCamera()) {
         QMessageBox::critical(this, "错误", "相机初始化失败！");
     } else {
@@ -34,13 +34,9 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->btnPreview, &QPushButton::clicked, this, &MainWindow::on_btnPreview_clicked);
     connect(ui->btnDepth, &QPushButton::clicked, this, &MainWindow::on_btnDepth_clicked);
     // 信号连接
-    connect(forceModule, &ForceModule::newForceData, this, [](double t, double fx, double fy, double fz){
-        Q_UNUSED(t); Q_UNUSED(fx); Q_UNUSED(fy); Q_UNUSED(fz);
-    });
-
-    connect(vibrationModule, &VibrationModule::newVibrationData, this, [](double t, double value){
-        Q_UNUSED(t); Q_UNUSED(value);
-    });
+    // 创建 NIDaqController
+    nidaqController = new NIDaqController(this);
+    nidaqController->init();
 }
 
 MainWindow::~MainWindow()
@@ -54,15 +50,13 @@ MainWindow::~MainWindow()
 void MainWindow::on_startButton_clicked()
 {
     SyncManager::instance().markStart();
-    forceModule->start();
-    vibrationModule->start();
+
     qDebug() << "采集启动！";
 }
 
 void MainWindow::on_stopButton_clicked()
 {
-    if (forceModule) forceModule->stop();
-    if (vibrationModule) vibrationModule->stop();
+
     qDebug() << "采集停止。";
 }
 
@@ -74,14 +68,7 @@ QString MainWindow::getTimestamp()
 /*==============================
  * 图像显示辅助函数
  *==============================*/
-// static void showImageOnGraphicsView(QGraphicsView* view, const QImage& img)
-// {
-//     qDebug() << "进入图像展示";
-//     auto* scene = new QGraphicsScene(view);
-//     scene->addPixmap(QPixmap::fromImage(img));
-//     view->setScene(scene);
-//     view->fitInView(scene->itemsBoundingRect(), Qt::KeepAspectRatio);
-// }
+
 void MainWindow::showImageOnGraphicsView(QGraphicsView *view, const QImage &img)
 {
     if (!view) return;
@@ -127,22 +114,7 @@ void MainWindow::on_btnPreview_clicked()
         QMessageBox::warning(this, "提示", "图像预览失败！");
     }
 }
-// void MainWindow::on_btnPreview_clicked()
-// {
-//     // 先把参数应用到相机（预览主要需要曝光）
-//     int exposure = ui->spinExposure->value();
-//     // 你可以把 applyParameters 放到 CameraController 中，下面简单调用 setExposure
-//     cameraController->setExposure(exposure);
 
-//     QImage preview;
-//     if (cameraController->capturePreview(preview)) {
-//         // 把 meta 也设置给 depthView（预览不改变 meta，但设置为最后 meta 若有）
-//         depthView->setMetaData(cameraController->getLastMeta()); // 需要 CameraController 提供 getLastMeta()
-//         showImageOnGraphicsView(ui->graphicsCamera, preview);
-//     } else {
-//         QMessageBox::warning(this, "提示", "图像预览失败！");
-//     }
-// }
 /*==============================
  * 深度图测量
  *==============================*/
@@ -201,4 +173,5 @@ void MainWindow::on_btnSaveCloud_clicked()
         QMessageBox::warning(this, "保存失败", "点云保存失败或没有可用数据。");
     }
 }
+
 

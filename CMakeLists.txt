@@ -27,14 +27,13 @@ include_directories(
     ${THIRD}/eigen
     ${THIRD}/cnpy
     ${THIRD}/zlib/include
+    "C:/Program Files (x86)/National Instruments/NI-DAQ/DAQmx ANSI C Dev/include"
 )
 
 add_executable(DAQsystem
     datarecorder.cpp
-    forcemodule.cpp
     mainwindow.cpp
     syncmanager.cpp
-    vibrationmodule.cpp
     cameracontroller.cpp
     graphicsviewzoomer.cpp
     ${THIRD}/cnpy/cnpy.cpp
@@ -42,13 +41,12 @@ add_executable(DAQsystem
     mainwindow.cpp
     main.cpp
     depthview.h depthview.cpp
+    nidaqcontroller.h nidaqcontroller.cpp
 )
 
 target_sources(DAQsystem PRIVATE
     cameracontroller.h
     datarecorder.h
-    forcemodule.h
-    vibrationmodule.h
     syncmanager.h
     mainwindow.h
     graphicsviewzoomer.h
@@ -62,6 +60,8 @@ target_link_libraries(DAQsystem PRIVATE
     "${THIRD}/GCI_SDK/lib/GC3DAlgorithm.lib"
     "${THIRD}/GCI_SDK/lib/GC3D-加密.lib"
     "${THIRD}/zlib/lib/zlibwapi.lib"
+    "C:/Program Files (x86)/National Instruments/Shared/ExternalCompilerSupport/C/lib64/msvc/NIDAQmx.lib"
+    "C:/Program Files (x86)/National Instruments/Shared/ExternalCompilerSupport/C/lib64/msvc/nisyscfg.lib"
     ws2_32
     $<$<CONFIG:Debug>:"${THIRD}/opencv/build/x64/vc16/lib/${OPENCV_WORLD_DBG}">
     $<$<CONFIG:Release>:"${THIRD}/opencv/build/x64/vc16/lib/${OPENCV_WORLD_REL}">

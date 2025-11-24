@@ -6,10 +6,9 @@
 #include <QDir>
 #include <QGraphicsView>       // ✅ 关键补充
 #include <QGraphicsScene>
-#include "forcemodule.h"
-#include "vibrationmodule.h"
 #include "cameracontroller.h"
 #include "graphicsviewzoomer.h"
+#include "nidaqcontroller.h"
 #include "DepthView.h"
 QT_BEGIN_NAMESPACE
 namespace Ui {class MainWindow;}
@@ -32,13 +31,12 @@ private slots:
     void showImageOnGraphicsView(QGraphicsView *view, const QImage &img);
 private:
     Ui::MainWindow *ui;
-    ForceModule *forceModule;
-    VibrationModule *vibrationModule;
     CameraController *cameraController = nullptr;
     GraphicsViewZoomer *cameraZoomer = nullptr;
     QGraphicsScene *cameraScene = nullptr;
     QString getTimestamp();
     DepthView* depthView;
+    NIDaqController *nidaqController = nullptr;
 };
 
 #endif // MAINWINDOW_H

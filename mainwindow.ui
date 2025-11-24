@@ -39,11 +39,12 @@
      <property name="bottomMargin">
       <number>0</number>
      </property>
-     <item row="1" column="0">
-      <widget class="QGraphicsView" name="graphicsVibration"/>
-     </item>
-     <item row="0" column="0">
-      <widget class="QGraphicsView" name="graphicsForce"/>
+     <item row="2" column="0">
+      <widget class="QLabel" name="labelDaqStatus">
+       <property name="text">
+        <string>TextLabel</string>
+       </property>
+      </widget>
      </item>
      <item row="0" column="2" rowspan="2">
       <widget class="QGraphicsView" name="graphicsCamera"/>
@@ -54,6 +55,12 @@
         <string/>
        </property>
       </widget>
+     </item>
+     <item row="1" column="0">
+      <widget class="QGraphicsView" name="graphicsVoltage2"/>
+     </item>
+     <item row="0" column="0">
+      <widget class="QGraphicsView" name="graphicsVoltage1"/>
      </item>
     </layout>
    </widget>
@@ -91,6 +98,127 @@
      <property name="text">
       <string>开始</string>
      </property>
+    </widget>
+    <widget class="QWidget" name="horizontalLayoutWidget_7">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>50</y>
+       <width>151</width>
+       <height>41</height>
+      </rect>
+     </property>
+     <layout class="QHBoxLayout" name="horizontalLayout_2">
+      <item>
+       <widget class="QLabel" name="label_7">
+        <property name="text">
+         <string>图像1对应插槽</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QComboBox" name="graphicsmod1">
+        <property name="currentIndex">
+         <number>0</number>
+        </property>
+        <item>
+         <property name="text">
+          <string>1</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>2</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>3</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>4</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+    <widget class="QWidget" name="horizontalLayoutWidget_8">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>100</y>
+       <width>151</width>
+       <height>41</height>
+      </rect>
+     </property>
+     <layout class="QHBoxLayout" name="horizontalLayout_8">
+      <item>
+       <widget class="QLabel" name="label_14">
+        <property name="text">
+         <string>图像1对应插槽</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QComboBox" name="comboBox_2">
+        <property name="currentIndex">
+         <number>1</number>
+        </property>
+        <item>
+         <property name="text">
+          <string>1</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>2</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>3</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>4</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+    <widget class="QWidget" name="horizontalLayoutWidget_9">
+     <property name="geometry">
+      <rect>
+       <x>320</x>
+       <y>79</y>
+       <width>185</width>
+       <height>41</height>
+      </rect>
+     </property>
+     <layout class="QHBoxLayout" name="horizontalLayout_9">
+      <item>
+       <widget class="QLabel" name="label_15">
+        <property name="text">
+         <string>采样频率</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QSpinBox" name="spinSampleRate"/>
+      </item>
+      <item>
+       <widget class="QLabel" name="label_16">
+        <property name="text">
+         <string>kHz</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </widget>
    </widget>
    <widget class="QGroupBox" name="groupBox">
