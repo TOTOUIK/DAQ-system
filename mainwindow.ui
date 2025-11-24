@@ -18,12 +18,12 @@
     <property name="geometry">
      <rect>
       <x>40</x>
-      <y>160</y>
+      <y>150</y>
       <width>1661</width>
-      <height>681</height>
+      <height>661</height>
      </rect>
     </property>
-    <layout class="QGridLayout" name="gridLayout" rowstretch="0,0,0" columnstretch="0,0,0" rowminimumheight="0,0,0" columnminimumwidth="0,0,0">
+    <layout class="QGridLayout" name="gridLayout" rowstretch="0,0" columnstretch="0,0" rowminimumheight="0,0" columnminimumwidth="0,0">
      <property name="sizeConstraint">
       <enum>QLayout::SizeConstraint::SetDefaultConstraint</enum>
      </property>
@@ -39,28 +39,25 @@
      <property name="bottomMargin">
       <number>0</number>
      </property>
-     <item row="2" column="0">
-      <widget class="QLabel" name="labelDaqStatus">
-       <property name="text">
-        <string>TextLabel</string>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="2" rowspan="2">
-      <widget class="QGraphicsView" name="graphicsCamera"/>
-     </item>
-     <item row="2" column="2">
-      <widget class="QLabel" name="labelXYZ">
-       <property name="text">
-        <string/>
-       </property>
-      </widget>
-     </item>
      <item row="1" column="0">
-      <widget class="QGraphicsView" name="graphicsVoltage2"/>
+      <widget class="QChartView" name="chartVoltage1_2" native="true"/>
      </item>
      <item row="0" column="0">
-      <widget class="QGraphicsView" name="graphicsVoltage1"/>
+      <widget class="QChartView" name="chartVoltage1" native="true"/>
+     </item>
+     <item row="0" column="1" rowspan="2">
+      <widget class="QChartView" name="widget" native="true">
+       <widget class="QGraphicsView" name="graphicsCamera">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>0</y>
+          <width>831</width>
+          <height>681</height>
+         </rect>
+        </property>
+       </widget>
+      </widget>
      </item>
     </layout>
    </widget>
@@ -518,6 +515,19 @@
      </layout>
     </widget>
    </widget>
+   <widget class="QLabel" name="label_17">
+    <property name="geometry">
+     <rect>
+      <x>880</x>
+      <y>810</y>
+      <width>701</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>TextLabel</string>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
@@ -531,6 +541,14 @@
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>QChartView</class>
+   <extends>QWidget</extends>
+   <header location="global">qchartview.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>
