@@ -40,7 +40,7 @@
       <number>0</number>
      </property>
      <item row="1" column="0">
-      <widget class="QChartView" name="chartVoltage1_2" native="true"/>
+      <widget class="QChartView" name="chartVoltage2" native="true"/>
      </item>
      <item row="0" column="0">
       <widget class="QChartView" name="chartVoltage1" native="true"/>
@@ -70,7 +70,7 @@
       <height>141</height>
      </rect>
     </property>
-    <widget class="QPushButton" name="stopButton">
+    <widget class="QPushButton" name="NIstopButton">
      <property name="geometry">
       <rect>
        <x>120</x>
@@ -83,7 +83,7 @@
       <string>结束</string>
      </property>
     </widget>
-    <widget class="QPushButton" name="startButton">
+    <widget class="QPushButton" name="NIstartButton">
      <property name="geometry">
       <rect>
        <x>10</x>
@@ -101,7 +101,7 @@
       <rect>
        <x>10</x>
        <y>50</y>
-       <width>151</width>
+       <width>161</width>
        <height>41</height>
       </rect>
      </property>
@@ -118,6 +118,11 @@
         <property name="currentIndex">
          <number>0</number>
         </property>
+        <item>
+         <property name="text">
+          <string>无</string>
+         </property>
+        </item>
         <item>
          <property name="text">
           <string>1</string>
@@ -147,7 +152,7 @@
       <rect>
        <x>10</x>
        <y>100</y>
-       <width>151</width>
+       <width>161</width>
        <height>41</height>
       </rect>
      </property>
@@ -160,10 +165,15 @@
        </widget>
       </item>
       <item>
-       <widget class="QComboBox" name="comboBox_2">
+       <widget class="QComboBox" name="graphicsmod2">
         <property name="currentIndex">
-         <number>1</number>
+         <number>0</number>
         </property>
+        <item>
+         <property name="text">
+          <string>无</string>
+         </property>
+        </item>
         <item>
          <property name="text">
           <string>1</string>
@@ -206,7 +216,11 @@
        </widget>
       </item>
       <item>
-       <widget class="QSpinBox" name="spinSampleRate"/>
+       <widget class="QSpinBox" name="spinSampleRate">
+        <property name="value">
+         <number>1</number>
+        </property>
+       </widget>
       </item>
       <item>
        <widget class="QLabel" name="label_16">
@@ -216,6 +230,19 @@
        </widget>
       </item>
      </layout>
+    </widget>
+    <widget class="QPushButton" name="NIsaveButton">
+     <property name="geometry">
+      <rect>
+       <x>230</x>
+       <y>10</y>
+       <width>93</width>
+       <height>28</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>保存数据</string>
+     </property>
     </widget>
    </widget>
    <widget class="QGroupBox" name="groupBox">
@@ -515,7 +542,7 @@
      </layout>
     </widget>
    </widget>
-   <widget class="QLabel" name="label_17">
+   <widget class="QLabel" name="labelXYZ">
     <property name="geometry">
      <rect>
       <x>880</x>

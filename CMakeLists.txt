@@ -17,7 +17,7 @@ set(OPENCV_WORLD_DBG opencv_world4120d)   # Debug
 set(OPENCV_WORLD_REL opencv_world4120)    # Release
 
 # �� Qt6
-find_package(Qt6 COMPONENTS Core Widgets Gui REQUIRED)
+find_package(Qt6 COMPONENTS Core Widgets Gui REQUIRED Charts)
 
 # include
 include_directories(
@@ -42,6 +42,11 @@ add_executable(DAQsystem
     main.cpp
     depthview.h depthview.cpp
     nidaqcontroller.h nidaqcontroller.cpp
+    acquisitionworker.h acquisitionworker.cpp
+    datarecorderbase.h datarecorderbase.cpp
+    voltagerecorder.h voltagerecorder.cpp
+    camerarecorder.h camerarecorder.cpp
+    pointcloudframe.h pointcloudframe.cpp
 )
 
 target_sources(DAQsystem PRIVATE
@@ -56,6 +61,7 @@ target_link_libraries(DAQsystem PRIVATE
     Qt6::Core
     Qt6::Widgets
     Qt6::Gui
+    Qt6::Charts
     "${THIRD}/GCI_SDK/lib/GC3D.lib"
     "${THIRD}/GCI_SDK/lib/GC3DAlgorithm.lib"
     "${THIRD}/GCI_SDK/lib/GC3D-加密.lib"
