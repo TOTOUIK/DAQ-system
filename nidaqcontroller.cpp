@@ -202,6 +202,7 @@ bool NIDaqController::startDual(int slot1, int slot2)
 
     // ---------- 创建 worker1 ----------
     if (!mod1.isEmpty()) {
+        qDebug() << "slot1启动";
         thread1 = new QThread();
         worker1 = new AcquisitionWorker(mod1, m_sampleRate);
 

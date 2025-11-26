@@ -12,6 +12,8 @@
 #include "graphicsviewzoomer.h"
 #include "camerascanworker.h"
 #include <QDoubleSpinBox>
+#include <thread>
+#include <chrono>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent),
@@ -50,46 +52,6 @@ MainWindow::MainWindow(QWidget *parent)
     voltageRecorder = new VoltageRecorder();
     cameraRecorder  = new CameraRecorder(cameraController);
 }
-
-// MainWindow::MainWindow(QWidget *parent)
-//     : QMainWindow(parent),
-//     ui(new Ui::MainWindow),
-//     cameraController(new CameraController(this))
-// {
-//     ui->setupUi(this);
-//     // 深度视图/鼠标坐标工具
-//     depthView = new DepthView(this);
-//     depthView->attachToView(ui->graphicsCamera);
-//     depthView->setLabelXYZ(ui->labelXYZ);
-
-//     cameraController->initCamera();
-
-//     // 图像显示设置
-//     cameraScene = new QGraphicsScene(this);
-//     ui->graphicsCamera->setScene(cameraScene);
-//     cameraZoomer = new GraphicsViewZoomer(ui->graphicsCamera, this);
-
-//     // 信号连接：NI 数据回调
-//     nidaqController = new NIDaqController(this);
-//     nidaqController->init();
-//     setupCharts();
-
-//     connect(nidaqController, &NIDaqController::newSamples1,
-//             this, &MainWindow::onSamples1);
-//     connect(nidaqController, &NIDaqController::newSamples2,
-//             this, &MainWindow::onSamples2);
-
-//     // 刷新图表（30 FPS）
-//     updateTimer.setInterval(33);
-//     connect(&updateTimer, &QTimer::timeout, this, &MainWindow::updateCharts);
-
-//     // 保存数据
-//     voltageRecorder = new VoltageRecorder();
-
-//     // Ensure cameraRecorder is initialized to avoid nullptr deref later
-//     cameraRecorder = new CameraRecorder(cameraController);
-//     qDebug() << "[MainWindow] Initialized cameraRecorder ptr =" << cameraRecorder;
-// }
 
 MainWindow::~MainWindow()
 {
@@ -201,6 +163,80 @@ void MainWindow::on_btnDepth_clicked()
     } else {
         QMessageBox::warning(this, "错误", "深度扫描失败！");
     }
+}
+
+void MainWindow::on_btnConScan_clicked()
+{
+    if (!cameraController) {
+        qDebug() << "[MainWindow][ERR] cameraController is null";
+        QMessageBox::warning(this, "错误", "相机未初始化");
+        return;
+    }
+
+    // 从 UI 读取间隔（秒），默认 1.0s
+    double intervalS = 1.0;
+    if (auto spin = this->findChild<QDoubleSpinBox*>("spinFrameInterval")) {
+        intervalS = spin->value();
+        if (intervalS <= 0.0) intervalS = 1.0;
+    }
+
+    // 扫描次数默认 10（你可以在这里修改或改为从 UI 读取）
+    const int iterations = 10;
+
+    // 禁用按钮以避免重复触发（根据你的 UI objectName）
+    if (ui->btnConScan) ui->btnConScan->setEnabled(false);
+
+    qDebug() << "[MainWindow] continuous scan: iterations =" << iterations << " interval_s =" << intervalS;
+
+    // 后台线程执行循环，避免阻塞 UI
+    std::thread([this, iterations, intervalS]() {
+        for (int i = 0; i < iterations; ++i) {
+            qDebug() << "[ConScan] iteration" << i << "start";
+            QImage depthImg;
+            gc3d::GC3DMetaData meta;
+            bool ok = false;
+
+            // captureDepth 是线程安全（内部使用 m_mutex）
+            ok = cameraController->captureDepth(depthImg, meta);
+
+            qDebug() << "[ConScan] captureDepth returned" << ok << "iteration" << i;
+
+            if (ok) {
+                // 立即保存 meta（CameraController 管理 lastMeta 的生命周期或调用深拷贝）
+                cameraController->setLastMeta(meta);
+
+                // 时间戳（秒）
+                double ts_s = SyncManager::instance().nowMs() * 0.001;
+
+                // 使用 cameraRecorder 立即保存点云（CameraRecorder::append 会调用 saveLastPointCloudNpy）
+                if (cameraRecorder) {
+                    cameraRecorder->append(ts_s);
+                } else {
+                    qDebug() << "[ConScan][WARN] cameraRecorder is null";
+                }
+
+                // 在主线程显示图像与更新 depthView
+                if (!depthImg.isNull()) {
+                    QMetaObject::invokeMethod(this, [this, depthImg]() {
+                        showImageOnGraphicsView(ui->graphicsCamera, depthImg);
+                        depthView->setMetaData(cameraController->getLastMeta());
+                    }, Qt::QueuedConnection);
+                }
+            } else {
+                // 记录失败，但继续下一次（可按需加入重试策略）
+                qDebug() << "[ConScan][WARN] captureDepth failed at iteration" << i;
+            }
+
+            // 休眠到下一次（可被外部中断，但这里只是简单等待）
+            std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>(intervalS * 1000)));
+        }
+
+        // 循环结束，恢复按钮（在主线程）
+        QMetaObject::invokeMethod(this, [this]() {
+            if (ui->btnConScan) ui->btnConScan->setEnabled(true);
+            qDebug() << "[ConScan] finished, UI button re-enabled";
+        }, Qt::QueuedConnection);
+    }).detach();
 }
 
 void MainWindow::on_btnSaveCloud_clicked()
@@ -424,6 +460,7 @@ void MainWindow::on_btnSyncStart_clicked()
         return;
     }
 
+    updateTimer.start();
     // 6) 启动相机扫描线程（interval 取 UI 中名为 spinFrameInterval 的控件，如果不存在则 1s）
     double interval = 1.0;
     if (ui->spinFrameInterval) {
@@ -484,4 +521,12 @@ void MainWindow::on_btnSyncStopSave_clicked()
     // 恢复 UI
     ui->btnSyncStart->setEnabled(true);
 }
+
+// 临时调试函数：在后台线程连续采集 N 次
+
+
+// 无参槽：在函数内部定义 iterations、intervalMs，然后在后台线程运行压力测试
+
+
+
 

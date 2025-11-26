@@ -32,6 +32,7 @@ private slots:
     void on_btnPreview_clicked();     // ✅ 预览图
     void on_btnDepth_clicked();   // ✅ 深度图
     void on_btnSaveCloud_clicked();
+    void on_btnConScan_clicked();
     void showImageOnGraphicsView(QGraphicsView *view, const QImage &img);
     void setupCharts();
     void on_btnNiStart_clicked();
@@ -40,9 +41,9 @@ private slots:
     void onSamples1(const QVector<double>& s, double t);
     void onSamples2(const QVector<double>& s, double t);
     void on_btnNiSave_clicked();
-
     void on_btnSyncStart_clicked();
     void on_btnSyncStopSave_clicked();
+
 private:
     Ui::MainWindow *ui;
     CameraController *cameraController = nullptr;
