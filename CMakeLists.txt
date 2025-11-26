@@ -47,6 +47,7 @@ add_executable(DAQsystem
     voltagerecorder.h voltagerecorder.cpp
     camerarecorder.h camerarecorder.cpp
     pointcloudframe.h pointcloudframe.cpp
+    camerascanworker.h camerascanworker.cpp
 )
 
 target_sources(DAQsystem PRIVATE

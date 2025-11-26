@@ -13,6 +13,7 @@
 #include "DepthView.h"
 #include "camerarecorder.h"
 #include "voltagerecorder.h"
+#include "camerascanworker.h"
 QT_BEGIN_NAMESPACE
 namespace Ui {class MainWindow;}
 QT_END_NAMESPACE
@@ -39,6 +40,9 @@ private slots:
     void onSamples1(const QVector<double>& s, double t);
     void onSamples2(const QVector<double>& s, double t);
     void on_btnNiSave_clicked();
+
+    void on_btnSyncStart_clicked();
+    void on_btnSyncStopSave_clicked();
 private:
     Ui::MainWindow *ui;
     CameraController *cameraController = nullptr;
@@ -70,6 +74,11 @@ private:
 
     CameraRecorder*  cameraRecorder;
     VoltageRecorder* voltageRecorder;
+
+    // 同步采集相关
+    QThread *cameraThread = nullptr;
+    CameraScanWorker *cameraWorker = nullptr;
+    QString saveRootDir; // 保存目录根
 };
 
 #endif // MAINWINDOW_H

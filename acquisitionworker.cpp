@@ -1,4 +1,5 @@
 #include "AcquisitionWorker.h"
+#include "syncmanager.h"
 #include <QDebug>
 
 AcquisitionWorker::AcquisitionWorker(const QString &physicalDevice, double sampleRate)
@@ -53,8 +54,6 @@ void AcquisitionWorker::process()
     if (err) return;
 
     QVector<double> buffer(4);
-    QElapsedTimer timer;
-    timer.start();
 
     while (m_running)
     {
@@ -79,7 +78,9 @@ void AcquisitionWorker::process()
             buffer[2] = data[2];
             buffer[3] = data[3];
 
-            emit newSamples(buffer, timer.elapsed() * 0.001);
+            // 使用全局 SyncManager 时间基准（秒）
+            double ts_s = SyncManager::instance().nowMs() * 0.001;
+            emit newSamples(buffer, ts_s);
         }
     }
 

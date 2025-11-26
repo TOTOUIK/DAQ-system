@@ -10,6 +10,8 @@
 #include "gc3d.h"
 #include "gc3dAlgorithm.h"
 #include "graphicsviewzoomer.h"
+#include "camerascanworker.h"
+#include <QDoubleSpinBox>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent),
@@ -28,16 +30,11 @@ MainWindow::MainWindow(QWidget *parent)
     cameraScene = new QGraphicsScene(this);
     ui->graphicsCamera->setScene(cameraScene);
     cameraZoomer = new GraphicsViewZoomer(ui->graphicsCamera, this);
-    // connect(ui->btnPreview, &QPushButton::clicked, this, &MainWindow::on_btnPreview_clicked);
-    // connect(ui->btnDepth, &QPushButton::clicked, this, &MainWindow::on_btnDepth_clicked);
     // 信号连接
     // 创建 NIDaqController
     nidaqController = new NIDaqController(this);
     nidaqController->init();
     setupCharts();
-
-    // connect(ui->btnNiStart, &QPushButton::clicked, this, &MainWindow::onNIStartClicked);
-    // connect(ui->btnNiStop,  &QPushButton::clicked, this, &MainWindow::onNIStopClicked);
 
     connect(nidaqController, &NIDaqController::newSamples1,
             this, &MainWindow::onSamples1);
@@ -51,8 +48,48 @@ MainWindow::MainWindow(QWidget *parent)
     connect(&updateTimer, &QTimer::timeout, this, &MainWindow::updateCharts);
     // 保存数据
     voltageRecorder = new VoltageRecorder();
-    // cameraRecorder  = new CameraRecorder(cameraController);
+    cameraRecorder  = new CameraRecorder(cameraController);
 }
+
+// MainWindow::MainWindow(QWidget *parent)
+//     : QMainWindow(parent),
+//     ui(new Ui::MainWindow),
+//     cameraController(new CameraController(this))
+// {
+//     ui->setupUi(this);
+//     // 深度视图/鼠标坐标工具
+//     depthView = new DepthView(this);
+//     depthView->attachToView(ui->graphicsCamera);
+//     depthView->setLabelXYZ(ui->labelXYZ);
+
+//     cameraController->initCamera();
+
+//     // 图像显示设置
+//     cameraScene = new QGraphicsScene(this);
+//     ui->graphicsCamera->setScene(cameraScene);
+//     cameraZoomer = new GraphicsViewZoomer(ui->graphicsCamera, this);
+
+//     // 信号连接：NI 数据回调
+//     nidaqController = new NIDaqController(this);
+//     nidaqController->init();
+//     setupCharts();
+
+//     connect(nidaqController, &NIDaqController::newSamples1,
+//             this, &MainWindow::onSamples1);
+//     connect(nidaqController, &NIDaqController::newSamples2,
+//             this, &MainWindow::onSamples2);
+
+//     // 刷新图表（30 FPS）
+//     updateTimer.setInterval(33);
+//     connect(&updateTimer, &QTimer::timeout, this, &MainWindow::updateCharts);
+
+//     // 保存数据
+//     voltageRecorder = new VoltageRecorder();
+
+//     // Ensure cameraRecorder is initialized to avoid nullptr deref later
+//     cameraRecorder = new CameraRecorder(cameraController);
+//     qDebug() << "[MainWindow] Initialized cameraRecorder ptr =" << cameraRecorder;
+// }
 
 MainWindow::~MainWindow()
 {
@@ -238,36 +275,9 @@ void MainWindow::setupCharts()
     ui->chartVoltage2->setRenderHint(QPainter::Antialiasing);
 }
 
-
-
-
 // ======================================================
-//  开始采集
+//  开始采集电压
 // ======================================================
-// void MainWindow::onNIStartClicked()
-// {
-
-//     int slot1 = ui->graphicsmod1->currentIndex() + 1;  // 1~4
-//     int slot2 = ui->graphicsmod2->currentIndex() + 1;  // 1~4
-
-//     // 选择 slot1 对应的模块
-//     nidaqController->configure(slot1);
-
-//     // 设置采样率
-//     double sr = ui->spinSampleRate->value();
-//     nidaqController->setSampleRate(sr);
-
-//     // 启动 DAQ
-//     if (nidaqController->start())
-//     {
-//         updateTimer.start();
-//         qDebug() << "DAQ started.";
-//     }
-//     else
-//     {
-//         qDebug() << "DAQ 启动失败";
-//     }
-// }
 void MainWindow::on_btnNiStart_clicked()
 {    // ---------- 清空旧图像 ----------
     voltageRecorder->clear();
@@ -365,26 +375,113 @@ void MainWindow::on_btnNiSave_clicked()
         QMessageBox::warning(this, "保存失败", "保存过程出错！");
 }
 
+void MainWindow::on_btnSyncStart_clicked()
+{
+    // 1) UI 状态
+    ui->btnSyncStart->setEnabled(false);
+    ui->btnSyncStopSave->setEnabled(true);
 
-// void MainWindow::on_btnStartSave_clicked()
-// {
-//     SyncManager::instance().markStart();
+    // 2) mark start
+    SyncManager::instance().markStart();
 
-//     QString rootDir = QCoreApplication::applicationDirPath() + "/SaveData";
-//     QDir().mkpath(rootDir);
+    // 3) 清空 recorder
+    voltageRecorder->clear();
+    if (cameraRecorder) cameraRecorder->clear();
 
-//     voltageRecorder->prepare(rootDir);
-//     voltageRecorder->start();
+    // 4) 准备保存目录（以时间戳命名）
+    QString base = QCoreApplication::applicationDirPath() + "/SaveData";
+    QDir dir(base);
+    if (!dir.exists()) dir.mkpath(".");
+    QString sess = QDateTime::currentDateTime().toString("yyyyMMdd_HHmmss");
+    saveRootDir = dir.filePath(sess);
+    QDir().mkpath(saveRootDir);
 
-//     cameraRecorder->prepare(rootDir);
-//     cameraRecorder->start();
+    // camera recorder prepare
+    if (cameraRecorder) cameraRecorder->prepare(saveRootDir);
 
-//     // 开一个定时器，每帧保存一次
-//     connect(&recordTimer, &QTimer::timeout, this, [this](){
-//         double t = SyncManager::instance().nowMs();
-//         voltageRecorder->recordFrame(t);
-//         cameraRecorder->recordFrame(t);
-//     });
+    // 5) 读取 UI 参数并应用
+    int exposure   = ui->spinExposure->value();
+    int smooth     = ui->spinSmooth->value();
+    int thMin      = ui->spinThresholdMin->value();
+    int thMax      = ui->spinThresholdMax->value();
+    int heightMin  = ui->spinHeightMin->value();
+    int heightMax  = ui->spinHeightMax->value();
+    float dn1      = ui->spinDenoise1->value();
+    float dn2      = ui->spinDenoise2->value();
 
-//     recordTimer.start(33); // ~30 FPS
-// }
+    cameraController->applyParameters(
+        exposure, smooth, thMin, thMax, heightMin, heightMax, dn1, dn2
+        );
+
+    // NI 采样率与启动
+    int slot1 = ui->graphicsmod1->currentIndex();
+    int slot2 = ui->graphicsmod2->currentIndex();
+    double sr = ui->spinSampleRate->value();
+    nidaqController->setSampleRate(sr);
+    if (!nidaqController->startDual(slot1, slot2)) {
+        QMessageBox::warning(this, "错误", "DAQ 启动失败");
+        ui->btnSyncStart->setEnabled(true);
+        return;
+    }
+
+    // 6) 启动相机扫描线程（interval 取 UI 中名为 spinFrameInterval 的控件，如果不存在则 1s）
+    double interval = 1.0;
+    if (ui->spinFrameInterval) {
+        interval = ui->spinFrameInterval->value();
+    }
+
+    cameraThread = new QThread();
+    cameraWorker = new CameraScanWorker(cameraController, cameraRecorder, interval);
+    cameraWorker->moveToThread(cameraThread);
+
+    connect(cameraThread, &QThread::started, cameraWorker, &CameraScanWorker::process);
+    connect(cameraWorker, &CameraScanWorker::finished, cameraThread, &QThread::quit);
+    connect(cameraWorker, &CameraScanWorker::frameReady, this, [this](const QImage &img){
+        // 更新 UI 预览与 depthView meta
+        if (!img.isNull()) {
+            showImageOnGraphicsView(ui->graphicsCamera, img);
+            depthView->setMetaData(cameraController->getLastMeta());
+        }
+    });
+
+    cameraThread->start();
+}
+
+void MainWindow::on_btnSyncStopSave_clicked()
+{
+    // 进入停止流程：先停止相机 worker，再停止 NI，再保存数据
+    ui->btnSyncStopSave->setEnabled(false);
+
+    // 1) 停止相机扫描
+    if (cameraWorker) {
+        cameraWorker->stop();
+    }
+    if (cameraThread) {
+        cameraThread->quit();
+        cameraThread->wait();
+    }
+    delete cameraWorker; cameraWorker = nullptr;
+    delete cameraThread; cameraThread = nullptr;
+
+    // 2) 停止 NI
+    nidaqController->stopDual();
+
+    // 3) 保存（在 UI 线程也可以，但建议在后台线程；为简洁这里直接调用）
+    QString fnameVolt = saveRootDir + "/voltage_" +
+                        QDateTime::currentDateTime().toString("yyyyMMdd_HHmmss") +
+                        ".csv";
+    bool okVolt = voltageRecorder->saveToFile(fnameVolt);
+
+    QString fnameCamIndex = saveRootDir + "/camera_index.csv";
+    bool okCam = cameraRecorder ? cameraRecorder->saveToFile(fnameCamIndex) : false;
+
+    if (okVolt && okCam) {
+        QMessageBox::information(this, "保存完成", "电压与相机点云已保存到:\n" + saveRootDir);
+    } else {
+        QMessageBox::warning(this, "保存失败", "部分数据保存失败，请检查日志。");
+    }
+
+    // 恢复 UI
+    ui->btnSyncStart->setEnabled(true);
+}
+
