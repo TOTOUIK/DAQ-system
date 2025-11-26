@@ -1,6 +1,8 @@
 ﻿#include "cameracontroller.h"
 #include <QDebug>
 #include <fstream>
+#include <QElapsedTimer>
+#include <QThread>
 using namespace gc3d;
 
 CameraController::CameraController(QObject* parent)
@@ -97,29 +99,70 @@ bool CameraController::capturePreview(QImage& outImg)
 }
 
 
-bool CameraController::captureDepth(QImage& outDepthImg, GC3DMetaData& outMeta)
-{   qDebug()<<"准备采集深度图";
-    QMutexLocker locker(&m_mutex);
-    if (!m_device) return false;
+// 替换现有 captureDepth 实现，新增重试与详细日志
 
-    if (m_device->snapShot3D() != GC3D_SUCCESS)
+
+bool CameraController::captureDepth(QImage& outDepthImg, GC3DMetaData& outMeta)
+{
+    QMutexLocker locker(&m_mutex);
+    if (!m_device) {
+        qDebug() << "[Camera] captureDepth: device == nullptr";
         return false;
-    qDebug()<<"采集深度图";
-    if (m_device->getGC3DMetaData(outMeta) != GC3D_SUCCESS)
+    }
+
+    qDebug() << "[Camera] captureDepth: calling snapShot3D()";
+    if (m_device->snapShot3D() != GC3D_SUCCESS) {
+        emit cameraError("3D扫描失败！");
+        qDebug() << "[Camera][ERR] snapShot3D failed";
         return false;
+    }
+
+    if (m_device->getGC3DMetaData(outMeta) != GC3D_SUCCESS) {
+        emit cameraError("获取3D数据失败！");
+        qDebug() << "[Camera][ERR] getGC3DMetaData failed";
+        return false;
+    }
 
     int W = outMeta.imgW;
     int H = outMeta.imgH;
+    if (W <= 0 || H <= 0 || !outMeta.depthImageData) {
+        emit cameraError("深度图数据为空或尺寸非法");
+        qDebug() << "[Camera][ERR] depth data invalid W,H,ptr =" << W << H << (void*)outMeta.depthImageData;
+        return false;
+    }
 
-    // depthImageData → 伪彩显示
+    // 生成伪彩图并把无效点设为黑色（与现有实现一致）
     cv::Mat gray(H, W, CV_8UC1, outMeta.depthImageData);
     cv::Mat color;
     cv::applyColorMap(gray, color, cv::COLORMAP_JET);
 
-    outDepthImg = QImage(color.data, W, H, color.step, QImage::Format_BGR888).copy();
-    qDebug() << "深度图采集成功";
+    cv::Mat black_bg = cv::Mat::zeros(H, W, CV_8UC3);
+    if (outMeta.maskflag) {
+        for (int i = 0; i < H; ++i) {
+            for (int j = 0; j < W; ++j) {
+                int idx = i * W + j;
+                if (outMeta.maskflag[idx]) {
+                    black_bg.at<cv::Vec3b>(i, j) = color.at<cv::Vec3b>(i, j);
+                }
+            }
+        }
+    } else {
+        // 没有 maskflag 则直接使用 color
+        black_bg = color;
+    }
+
+    QImage tmp(black_bg.data, W, H, static_cast<int>(black_bg.step), QImage::Format_BGR888);
+    outDepthImg = tmp.copy();
+    if (outDepthImg.isNull()) {
+        qDebug() << "[Camera][ERR] outDepthImg is null after copy";
+        return false;
+    }
+
+    qDebug() << "[Camera] captureDepth OK, img W,H =" << outDepthImg.width() << outDepthImg.height();
     return true;
 }
+
+
 
 // 保存最近一次 meta
 void CameraController::setLastMeta(const gc3d::GC3DMetaData& meta)
