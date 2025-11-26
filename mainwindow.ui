@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1726</width>
-    <height>895</height>
+    <height>949</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -70,7 +70,7 @@
       <height>141</height>
      </rect>
     </property>
-    <widget class="QPushButton" name="NIstopButton">
+    <widget class="QPushButton" name="btnNiStop">
      <property name="geometry">
       <rect>
        <x>120</x>
@@ -83,7 +83,7 @@
       <string>结束</string>
      </property>
     </widget>
-    <widget class="QPushButton" name="NIstartButton">
+    <widget class="QPushButton" name="btnNiStart">
      <property name="geometry">
       <rect>
        <x>10</x>
@@ -234,7 +234,7 @@
       </item>
      </layout>
     </widget>
-    <widget class="QPushButton" name="NIsaveButton">
+    <widget class="QPushButton" name="btnNiSave">
      <property name="geometry">
       <rect>
        <x>230</x>
@@ -556,6 +556,32 @@
     </property>
     <property name="text">
      <string>TextLabel</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="btnSyncStart">
+    <property name="geometry">
+     <rect>
+      <x>40</x>
+      <y>840</y>
+      <width>101</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>同步开始</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="btnSyncStopSave">
+    <property name="geometry">
+     <rect>
+      <x>170</x>
+      <y>840</y>
+      <width>101</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>结束并保存</string>
     </property>
    </widget>
   </widget>

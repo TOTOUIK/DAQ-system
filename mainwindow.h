@@ -33,12 +33,12 @@ private slots:
     void on_btnSaveCloud_clicked();
     void showImageOnGraphicsView(QGraphicsView *view, const QImage &img);
     void setupCharts();
-    void onNIStartClicked();
-    void onNIStopClicked();
+    void on_btnNiStart_clicked();
+    void on_btnNiStop_clicked();
     void updateCharts();
     void onSamples1(const QVector<double>& s, double t);
     void onSamples2(const QVector<double>& s, double t);
-    void onNISaveButtonClicked();
+    void on_btnNiSave_clicked();
 private:
     Ui::MainWindow *ui;
     CameraController *cameraController = nullptr;

@@ -22,32 +22,29 @@ MainWindow::MainWindow(QWidget *parent)
     depthView->attachToView(ui->graphicsCamera);
     depthView->setLabelXYZ(ui->labelXYZ);
 
-    if (!cameraController->initCamera()) {
-        QMessageBox::critical(this, "错误", "相机初始化失败！");
-    } else {
-        qDebug() << "相机初始化成功。";
-    }
+    cameraController->initCamera();
+
     // 图像显示设置
     cameraScene = new QGraphicsScene(this);
     ui->graphicsCamera->setScene(cameraScene);
     cameraZoomer = new GraphicsViewZoomer(ui->graphicsCamera, this);
-    connect(ui->btnPreview, &QPushButton::clicked, this, &MainWindow::on_btnPreview_clicked);
-    connect(ui->btnDepth, &QPushButton::clicked, this, &MainWindow::on_btnDepth_clicked);
+    // connect(ui->btnPreview, &QPushButton::clicked, this, &MainWindow::on_btnPreview_clicked);
+    // connect(ui->btnDepth, &QPushButton::clicked, this, &MainWindow::on_btnDepth_clicked);
     // 信号连接
     // 创建 NIDaqController
     nidaqController = new NIDaqController(this);
     nidaqController->init();
     setupCharts();
 
-    connect(ui->NIstartButton, &QPushButton::clicked, this, &MainWindow::onNIStartClicked);
-    connect(ui->NIstopButton,  &QPushButton::clicked, this, &MainWindow::onNIStopClicked);
+    // connect(ui->btnNiStart, &QPushButton::clicked, this, &MainWindow::onNIStartClicked);
+    // connect(ui->btnNiStop,  &QPushButton::clicked, this, &MainWindow::onNIStopClicked);
 
     connect(nidaqController, &NIDaqController::newSamples1,
             this, &MainWindow::onSamples1);
     connect(nidaqController, &NIDaqController::newSamples2,
             this, &MainWindow::onSamples2);
-    connect(ui->NIsaveButton, &QPushButton::clicked,
-            this, &MainWindow::onNISaveButtonClicked);
+    // connect(ui->btnNiSave, &QPushButton::clicked,
+    //         this, &MainWindow::onNISaveButtonClicked);
 
     // 刷新图表（30 FPS）
     updateTimer.setInterval(33);
@@ -55,8 +52,6 @@ MainWindow::MainWindow(QWidget *parent)
     // 保存数据
     voltageRecorder = new VoltageRecorder();
     // cameraRecorder  = new CameraRecorder(cameraController);
-
-
 }
 
 MainWindow::~MainWindow()
@@ -273,7 +268,7 @@ void MainWindow::setupCharts()
 //         qDebug() << "DAQ 启动失败";
 //     }
 // }
-void MainWindow::onNIStartClicked()
+void MainWindow::on_btnNiStart_clicked()
 {    // ---------- 清空旧图像 ----------
     voltageRecorder->clear();
     for (int i = 0; i < 4; i++) {
@@ -301,7 +296,7 @@ void MainWindow::onNIStartClicked()
 // ======================================================
 // 停止采集
 // ======================================================
-void MainWindow::onNIStopClicked()
+void MainWindow::on_btnNiStop_clicked()
 {
     nidaqController->stopDual();
     updateTimer.stop();
@@ -349,7 +344,7 @@ void MainWindow::updateCharts()
 
 //电压数据保存
 
-void MainWindow::onNISaveButtonClicked()
+void MainWindow::on_btnNiSave_clicked()
 {
     if (!voltageRecorder->hasData()) {
         QMessageBox::warning(this, "提示", "没有可以保存的电压数据！");
