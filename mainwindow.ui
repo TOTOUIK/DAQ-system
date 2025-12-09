@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1726</width>
-    <height>949</height>
+    <width>1496</width>
+    <height>820</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -19,8 +19,8 @@
      <rect>
       <x>40</x>
       <y>150</y>
-      <width>1661</width>
-      <height>661</height>
+      <width>1391</width>
+      <height>571</height>
      </rect>
     </property>
     <layout class="QGridLayout" name="gridLayout" rowstretch="0,0" columnstretch="0,0" rowminimumheight="0,0" columnminimumwidth="0,0">
@@ -52,7 +52,7 @@
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>831</width>
+          <width>691</width>
           <height>681</height>
          </rect>
         </property>
@@ -66,7 +66,7 @@
      <rect>
       <x>40</x>
       <y>10</y>
-      <width>581</width>
+      <width>361</width>
       <height>141</height>
      </rect>
     </property>
@@ -201,8 +201,8 @@
     <widget class="QWidget" name="horizontalLayoutWidget_9">
      <property name="geometry">
       <rect>
-       <x>320</x>
-       <y>79</y>
+       <x>180</x>
+       <y>50</y>
        <width>185</width>
        <height>41</height>
       </rect>
@@ -251,8 +251,8 @@
    <widget class="QGroupBox" name="groupBox">
     <property name="geometry">
      <rect>
-      <x>640</x>
-      <y>10</y>
+      <x>400</x>
+      <y>0</y>
       <width>1071</width>
       <height>141</height>
      </rect>
@@ -561,8 +561,8 @@
    <widget class="QLabel" name="labelXYZ">
     <property name="geometry">
      <rect>
-      <x>880</x>
-      <y>810</y>
+      <x>740</x>
+      <y>720</y>
       <width>701</width>
       <height>31</height>
      </rect>
@@ -575,7 +575,7 @@
     <property name="geometry">
      <rect>
       <x>40</x>
-      <y>840</y>
+      <y>730</y>
       <width>101</width>
       <height>31</height>
      </rect>
@@ -587,8 +587,8 @@
    <widget class="QPushButton" name="btnSyncStopSave">
     <property name="geometry">
      <rect>
-      <x>170</x>
-      <y>840</y>
+      <x>150</x>
+      <y>730</y>
       <width>101</width>
       <height>31</height>
      </rect>
@@ -600,8 +600,8 @@
    <widget class="QWidget" name="horizontalLayoutWidget_10">
     <property name="geometry">
      <rect>
-      <x>310</x>
-      <y>830</y>
+      <x>260</x>
+      <y>720</y>
       <width>145</width>
       <height>51</height>
      </rect>
@@ -636,7 +636,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1726</width>
+     <width>1496</width>
      <height>25</height>
     </rect>
    </property>

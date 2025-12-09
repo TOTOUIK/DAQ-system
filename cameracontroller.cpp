@@ -84,17 +84,39 @@ bool CameraController::capturePreview(QImage& outImg)
     QMutexLocker locker(&m_mutex);
     if (!m_device) return false;
 
-    DeviceInformation info;
-    m_device->getDeviceInfo(info);
-    int W = info.sensorWidth;
-    int H = info.sensorHeight;
-    std::vector<unsigned char> buf(W * H);
-    qDebug() << "曝光时长"<<m_exposureUs<<"ms";
-    // 拍摄灰度预览图
-    m_device->snapShot2D(m_exposureUs, 0.0, buf.data());
-    outImg = QImage(buf.data(), W, H, QImage::Format_Grayscale8).copy();
+    gc3d::GC3DMetaData meta;
+    std::memset(&meta, 0, sizeof(meta));
 
-    qDebug() << "预览图采集成功";
+    qDebug() << "[Camera] capturePreview: calling snapShot3D() to obtain preview";
+    if (m_device->snapShot3D() != GC3D_SUCCESS) {
+        emit cameraError("3D扫描失败，无法获取预览图");
+        qDebug() << "[Camera][ERR] snapShot3D failed in capturePreview";
+        return false;
+    }
+
+    if (m_device->getGC3DMetaData(meta) != GC3D_SUCCESS) {
+        emit cameraError("获取3D数据失败，无法获取预览图");
+        qDebug() << "[Camera][ERR] getGC3DMetaData failed in capturePreview";
+        return false;
+    }
+
+    int W = meta.imgW;
+    int H = meta.imgH;
+    if (W <= 0 || H <= 0 || !meta.previewImgData) {
+        emit cameraError("预览图数据为空或尺寸非法");
+        qDebug() << "[Camera][ERR] preview data invalid W,H,ptr =" << W << H << (void*)meta.previewImgData;
+        return false;
+    }
+
+    // SDK 文档说明 previewImgData 是单通道灰度（长度 imgW * imgH）
+    QImage tmp(reinterpret_cast<const uchar*>(meta.previewImgData), W, H, QImage::Format_Grayscale8);
+    outImg = tmp.copy();
+    if (outImg.isNull()) {
+        qDebug() << "[Camera][ERR] outImg is null after copy in capturePreview";
+        return false;
+    }
+
+    qDebug() << "[Camera] capturePreview OK, img W,H =" << outImg.width() << outImg.height();
     return true;
 }
 
